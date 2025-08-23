@@ -10,44 +10,63 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * @OA\Tag(
+ *     name="Authentication",
+ *     description="API Endpoints para autenticación de usuarios"
+ * )
+ */
 class AuthController extends Controller
 {
     /**
-     * Register a new user
-     *
-     * @param RegisterRequest $request
-     * @return JsonResponse
-     */
-    public function register(RegisterRequest $request): JsonResponse
-    {
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-
-        $token = $user->createToken('api-token')->plainTextToken;
-
-        return response()->json([
-            'success' => true,
-            'message' => 'User registered successfully',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                ],
-                'token' => $token,
-                'token_type' => 'Bearer'
-            ]
-        ], 201);
-    }
-
-    /**
-     * Login user
-     *
-     * @param LoginRequest $request
-     * @return JsonResponse
+     * @OA\Post(
+     *     path="/api/auth/login",
+     *     operationId="loginUser",
+     *     tags={"Authentication"},
+     *     summary="Iniciar sesión",
+     *     description="Autentica un usuario y retorna un token de acceso",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", format="email", example="juan@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="password123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login exitoso",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Login successful"),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="user", type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Juan Pérez"),
+     *                     @OA\Property(property="email", type="string", example="juan@example.com")
+     *                 ),
+     *                 @OA\Property(property="token", type="string", example="1|abcd1234efgh5678..."),
+     *                 @OA\Property(property="token_type", type="string", example="Bearer")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Credenciales inválidas",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Invalid credentials")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Error de validación",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
+     * )
      */
     public function login(LoginRequest $request): JsonResponse
     {
@@ -77,10 +96,29 @@ class AuthController extends Controller
     }
 
     /**
-     * Logout user (revoke current token)
-     *
-     * @param Request $request
-     * @return JsonResponse
+     * @OA\Post(
+     *     path="/api/auth/logout",
+     *     operationId="logoutUser",
+     *     tags={"Authentication"},
+     *     summary="Cerrar sesión",
+     *     description="Cierra la sesión del usuario actual revocando el token de acceso",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Logout exitoso",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Logged out successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
+     *     )
+     * )
      */
     public function logout(Request $request): JsonResponse
     {
@@ -93,10 +131,29 @@ class AuthController extends Controller
     }
 
     /**
-     * Logout from all devices (revoke all tokens)
-     *
-     * @param Request $request
-     * @return JsonResponse
+     * @OA\Post(
+     *     path="/api/auth/logout-all",
+     *     operationId="logoutAllDevices",
+     *     tags={"Authentication"},
+     *     summary="Cerrar sesión en todos los dispositivos",
+     *     description="Cierra la sesión del usuario en todos los dispositivos revocando todos los tokens",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Logout exitoso de todos los dispositivos",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Logged out from all devices successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
+     *     )
+     * )
      */
     public function logoutAll(Request $request): JsonResponse
     {
@@ -109,10 +166,38 @@ class AuthController extends Controller
     }
 
     /**
-     * Get authenticated user profile
-     *
-     * @param Request $request
-     * @return JsonResponse
+     * @OA\Get(
+     *     path="/api/auth/profile",
+     *     operationId="getUserProfile",
+     *     tags={"Authentication"},
+     *     summary="Obtener perfil del usuario autenticado",
+     *     description="Retorna la información del perfil del usuario autenticado",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Perfil obtenido exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="User profile retrieved successfully"),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="user", type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Juan Pérez"),
+     *                     @OA\Property(property="email", type="string", example="juan@example.com"),
+     *                     @OA\Property(property="created_at", type="string", example="2025-08-22T10:00:00.000000Z"),
+     *                     @OA\Property(property="updated_at", type="string", example="2025-08-22T10:00:00.000000Z")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
+     *     )
+     * )
      */
     public function profile(Request $request): JsonResponse
     {
@@ -132,10 +217,33 @@ class AuthController extends Controller
     }
 
     /**
-     * Refresh token (revoke current and create new)
-     *
-     * @param Request $request
-     * @return JsonResponse
+     * @OA\Post(
+     *     path="/api/auth/refresh",
+     *     operationId="refreshToken",
+     *     tags={"Authentication"},
+     *     summary="Renovar token de acceso",
+     *     description="Revoca el token actual y genera uno nuevo",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Token renovado exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Token refreshed successfully"),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="token", type="string", example="1|abcd1234efgh5678..."),
+     *                 @OA\Property(property="token_type", type="string", example="Bearer")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
+     *     )
+     * )
      */
     public function refresh(Request $request): JsonResponse
     {

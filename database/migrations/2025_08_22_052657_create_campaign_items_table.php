@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('range', 100);
             $table->float('subtotal', 8, 2);
-            $table->enum('provider_status', ['Accepted', 'Rejected'])->nullable();
+            $table->enum('provider_status', ['Pending', 'Accepted', 'Rejected'])->default('Pending');
             $table->float('price_per_day', 8, 2);
             $table->string('description', 255)->nullable();
             $table->timestamps();

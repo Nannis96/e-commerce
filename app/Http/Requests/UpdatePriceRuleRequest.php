@@ -30,7 +30,7 @@ class UpdatePriceRuleRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('price_rules', 'name')->ignore($this->price_rule->id)
+                Rule::unique('price_rules', 'name')->ignore($this->route('priceRule'))
             ],
             'value_pct' => 'sometimes|required|integer|min:0|max:100'
         ];

@@ -18,7 +18,7 @@ class CampaignItem extends Model
     protected $fillable = [
         'range',
         'days',
-        'price_per_days',
+        'price_per_day',
         'subtotal',
         'provider_status',
         'description',
@@ -32,7 +32,7 @@ class CampaignItem extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'price_per_days' => 'decimal:2',
+        'price_per_day' => 'decimal:2',
         'subtotal' => 'decimal:2',
     ];
 

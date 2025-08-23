@@ -8,13 +8,13 @@ use App\Http\Controllers\MediaImageController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PayoutController;
 use App\Http\Controllers\PriceRuleController;
+use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Public auth routes
 Route::prefix('auth')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 });
 
@@ -38,45 +38,68 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // User management routes
-    Route::prefix('users')->group(function () {
+    Route::prefix('v1/users')->group(function () {
         Route::get('/', [UserController::class, 'index']);
-    //     Route::post('/', [UserController::class, 'store']);
-    //     Route::get('/{user}', [UserController::class, 'show']);
-    //     Route::put('/{user}', [UserController::class, 'update']);
-    //     Route::delete('/{user}', [UserController::class, 'destroy']);
+        Route::get('/{user}', [UserController::class, 'show']);
+        Route::put('/{user}', [UserController::class, 'update']);
+        Route::delete('/{user}', [UserController::class, 'destroy']);
+        
+        // Solo admin puede crear usuarios
+        Route::middleware('admin')->post('/', [UserController::class, 'store']);
+    });
+
+    // Provider management routes
+    Route::prefix('v1/providers')->group(function () {
+        Route::get('/', [ProviderController::class, 'index']);
+        Route::get('/{provider}', [ProviderController::class, 'show']);
+        Route::put('/{provider}', [ProviderController::class, 'update']);
+        Route::delete('/{provider}', [ProviderController::class, 'destroy']);
+        
+        // Solo admin puede crear proveedores
+        Route::middleware('admin')->post('/', [ProviderController::class, 'store']);
     });
 
     // Campaign routes - accessible to all authenticated users
-    Route::prefix('campaigns')->group(function () {
+    Route::prefix('v1/campaigns')->group(function () {
         Route::get('/', [CampaignController::class, 'index']);
         Route::post('/', [CampaignController::class, 'store']);
         Route::get('/{campaign}', [CampaignController::class, 'show']);
-        Route::patch('/{campaign}', [CampaignController::class, 'update']);
+        Route::put('/{campaign}', [CampaignController::class, 'update']);
         Route::delete('/{campaign}', [CampaignController::class, 'destroy']);
         Route::patch('/{campaign}/cancel', [CampaignController::class, 'cancel']);
     });
 
     // Campaign Items routes - accessible to all authenticated users
-    Route::prefix('campaign-items')->group(function () {
+    Route::prefix('v1/campaign-items')->group(function () {
         Route::get('/', [CampaignItemController::class, 'index']);
         Route::post('/', [CampaignItemController::class, 'store']);
         Route::get('/{campaign_item}', [CampaignItemController::class, 'show']);
-        Route::patch('/{campaign_item}', [CampaignItemController::class, 'update']);
+        Route::put('/{campaign_item}', [CampaignItemController::class, 'update']);
         Route::delete('/{campaign_item}', [CampaignItemController::class, 'destroy']);
+        
+        // Provider-only routes for accepting/rejecting campaign items
+        Route::middleware('provider')->group(function () {
+            Route::patch('/{campaign_item}/accept', [CampaignItemController::class, 'accept']);
+            Route::patch('/{campaign_item}/reject', [CampaignItemController::class, 'reject']);
+        });
     });
 
     // Payment routes - accessible to clients and admins
-    Route::prefix('payments')->group(function () {
+    Route::prefix('v1/payments')->group(function () {
         Route::get('/', [PaymentController::class, 'index']);
-        Route::post('/', [PaymentController::class, 'store']);
         Route::get('/{payment}', [PaymentController::class, 'show']);
+        
+        // Solo admin puede crear pagos
+        Route::middleware('admin')->post('/', [PaymentController::class, 'store']);
     });
 
     // Payout routes - accessible to providers and admins
-    Route::prefix('payouts')->group(function () {
+    Route::prefix('v1/payouts')->group(function () {
         Route::get('/', [PayoutController::class, 'index']);
-        Route::post('/', [PayoutController::class, 'store']);
         Route::get('/{payout}', [PayoutController::class, 'show']);
+        
+        // Solo admin puede crear payouts
+        Route::middleware('admin')->post('/', [PayoutController::class, 'store']);
     });
 
     Route::middleware('admin.or.provider')->prefix('v1')->group(function () {
@@ -86,7 +109,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/', [MediaController::class, 'index']);
             Route::post('/', [MediaController::class, 'store']);
             Route::get('/{media}', [MediaController::class, 'show']);
-            Route::patch('/{media}', [MediaController::class, 'update']);
+            Route::put('/{media}', [MediaController::class, 'update']);
             Route::delete('/{media}', [MediaController::class, 'destroy']);
             
             // Media images
@@ -106,7 +129,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/', [MediaImageController::class, 'index']);
             Route::post('/', [MediaImageController::class, 'store']);
             Route::get('/{mediaImage}', [MediaImageController::class, 'show']);
-            Route::patch('/{mediaImage}', [MediaImageController::class, 'update']);
+            Route::put('/{mediaImage}', [MediaImageController::class, 'update']);
             Route::delete('/{mediaImage}', [MediaImageController::class, 'destroy']);
         });
 
@@ -115,16 +138,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/', [PriceRuleController::class, 'index']);
             Route::post('/', [PriceRuleController::class, 'store']);
             Route::get('/{priceRule}', [PriceRuleController::class, 'show']);
-            Route::patch('/{priceRule}', [PriceRuleController::class, 'update']);
+            Route::put('/{priceRule}', [PriceRuleController::class, 'update']);
             Route::delete('/{priceRule}', [PriceRuleController::class, 'destroy']);
-        });
-    });
-
-    // Provider-only routes for campaign items
-    Route::middleware('provider')->prefix('v1')->group(function () {
-        Route::prefix('campaign-items')->group(function () {
-            Route::patch('/{campaign_item}/accept', [CampaignItemController::class, 'accept']);
-            Route::patch('/{campaign_item}/reject', [CampaignItemController::class, 'reject']);
         });
     });
 });

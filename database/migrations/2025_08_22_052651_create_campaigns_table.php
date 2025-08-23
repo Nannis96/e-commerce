@@ -18,7 +18,7 @@ return new class extends Migration
             $table->date('end_date');  
             $table->float('total', 8, 2)->default(0)->nullable();
             $table->string('currency', 100);
-            $table->enum('status', ['Confirmed', 'Paid', 'Active', 'Finished', 'Pending', 'Cancelled'])->default('Pending');
+            $table->enum('status', ['Confirmed', 'Paid', 'Active', 'Finished', 'Cancelled'])->default('Confirmed');
             $table->timestamps();
             $table->softDeletes();
         });
