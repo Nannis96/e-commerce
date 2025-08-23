@@ -178,9 +178,10 @@ php artisan route:cache
 php artisan view:cache
 composer install --no-dev --optimize-autoloader
 ```
-
-## 🌐 API Endpoints
-
+```
+# API Endpoints
+```
+```
 ### 🔐 Autenticación
 ```
 POST   /api/auth/login          # Iniciar sesión
@@ -311,9 +312,6 @@ php artisan l5-swagger:generate
 # Ver logs en tiempo real
 tail -f storage/logs/laravel.log
 
-# O usando Pail (incluido en el proyecto)
-php artisan pail
-```
 
 ## 📄 Licencia
 
