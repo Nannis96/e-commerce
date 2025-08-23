@@ -18,10 +18,10 @@ return new class extends Migration
             $table->string('location', 100);
             $table->string('period_limit', 100);
             $table->float('price_limit', 8, 2);
-            $table->enum('status', ['Available', 'Busy'])->default('Available');
+            $table->enum('status', ['Available', 'Busy'])->nullable();
             $table->timestamps();
             $table->softDeletes();
-            $table->foreignId('provider_id')->constrained();
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
         });
     }
 

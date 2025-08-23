@@ -3,114 +3,110 @@
 namespace App\Http\Controllers;
 
 use App\Models\PriceRule;
+use App\Http\Requests\StorePriceRuleRequest;
+use App\Http\Requests\UpdatePriceRuleRequest;
+use App\Http\Resources\PriceRuleResource;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class PriceRuleController extends Controller
 {
-    public function index()
-    {
-        try{
 
-            $price_rules = PriceRule::orderBy('id', 'desc')->paginate();
+    public function index(Request $request): JsonResponse
+    {
+        try {
+            $query = PriceRule::query();
+
+            $priceRules = $query->orderBy('id', 'desc')->paginate($request->get('per_page', 15));
 
             return response()->json([
                 'success' => true,
-                'data'    => $price_rules
-            ], 201);
+                'data' => PriceRuleResource::collection($priceRules),
+                'message' => 'Reglas de precios obtenidas correctamente'
+            ], 200);
         
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al mostrar las reglas de los precios por fechas',
-                'error'   => $e->getMessage()
+                'message' => 'Error al obtener las reglas de precios',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
 
-    public function store(Request $request)
+    public function store(StorePriceRuleRequest $request): JsonResponse
     {
-        try{
-            $price_rule = new PriceRule();
-
-            $price_rule->start_date = $request->start_date;
-            $price_rule->end_date = $request->end_date;
-            $price_rule->name = $request->name;
-            $price_rule->value_pct = $request->value_pct;
-            #$price_rule->range = $request->range;
-
-            $price_rule->save();
+        try {
+            $priceRule = PriceRule::create($request->validated());
 
             return response()->json([
                 'success' => true,
-                'message' => 'El precio por fecha fue creado correctamente',
+                'data' => new PriceRuleResource($priceRule),
+                'message' => 'Regla de precio creada correctamente'
             ], 201);
         
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al crear el precio por fecha',
-                'error'   => $e->getMessage()
+                'message' => 'Error al crear la regla de precio',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
 
-    public function show(PriceRule $price_rule)
+    public function show(PriceRule $priceRule): JsonResponse
     {
-        try{
+        try {
             return response()->json([
                 'success' => true,
-                'data'    => $price_rule
-            ], 201);
+                'data' => new PriceRuleResource($priceRule),
+                'message' => 'Regla de precio obtenida correctamente'
+            ], 200);
         
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al mostrar el precio por fecha',
-                'error'   => $e->getMessage()
+                'message' => 'Error al obtener la regla de precio',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
 
-    public function update(Request $request, PriceRule $price_rule)
+    public function update(UpdatePriceRuleRequest $request, PriceRule $priceRule): JsonResponse
     {
-        try{
-            $price_rule->start_date = $request->start_date;
-            $price_rule->end_date = $request->end_date;
-            $price_rule->name = $request->name;
-            $price_rule->value_pct = $request->value_pct;
-            #$price_rule->range = $request->range;
-
-            $price_rule->save();
+        try {
+            $priceRule->update($request->validated());
 
             return response()->json([
                 'success' => true,
-                'message' => "Se actualizo correctamente el precio por fecha"
-            ], 201);
+                'data' => new PriceRuleResource($priceRule->fresh()),
+                'message' => 'Regla de precio actualizada correctamente'
+            ], 200);
         
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al editar el precio por fecha',
-                'error'   => $e->getMessage()
+                'message' => 'Error al actualizar la regla de precio',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
 
-    public function destroy(PriceRule $price_rule)
+    public function destroy(PriceRule $priceRule): JsonResponse
     {
-        try{
-            $price_rule->delete();
+        try {
+            $priceRule->delete();
         
             return response()->json([
                 'success' => true,
-                'message' => "Se elimino correctamente el precio por fecha"
-            ], 201);
+                'message' => 'Regla de precio eliminada correctamente'
+            ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al eliminar el precio por fecha',
-                'error'   => $e->getMessage()
+                'message' => 'Error al eliminar la regla de precio',
+                'error' => $e->getMessage()
             ], 500);
         } 
     }

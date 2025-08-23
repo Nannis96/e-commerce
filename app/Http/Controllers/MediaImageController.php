@@ -3,63 +3,153 @@
 namespace App\Http\Controllers;
 
 use App\Models\MediaImage;
+use App\Models\Media;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class MediaImageController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request): JsonResponse
     {
-        //
+        try {
+            $query = MediaImage::with('media');
+
+            // Pagination
+            $perPage = $request->get('per_page', 15);
+            $images = $query->paginate($perPage);
+
+            return response()->json([
+                'success' => true,
+                'data' => $images,
+                'message' => 'Imágenes de medios obtenidas correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener las imágenes de medios',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(Request $request): JsonResponse
     {
-        //
+        try {
+            $validatedData = $request->validate([
+                'route' => 'required|string|max:250',
+                'media_id' => 'required|exists:media,id',
+            ]);
+
+            $mediaImage = MediaImage::create($validatedData);
+            $mediaImage->load('media');
+
+            return response()->json([
+                'success' => true,
+                'data' => $mediaImage,
+                'message' => 'Imagen de medio creada correctamente'
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear la imagen de medio',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function show(MediaImage $mediaImage): JsonResponse
     {
-        //
+        try {
+            $mediaImage->load('media');
+
+            return response()->json([
+                'success' => true,
+                'data' => $mediaImage,
+                'message' => 'Imagen de medio obtenida correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener la imagen de medio',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(MediaImage $mediaImage)
+    public function update(Request $request, MediaImage $mediaImage): JsonResponse
     {
-        //
+        try {
+            $validatedData = $request->validate([
+                'route' => 'sometimes|required|string|max:250',
+                'media_id' => 'sometimes|required|exists:media,id',
+            ]);
+
+            $mediaImage->update($validatedData);
+            $mediaImage->load('media');
+
+            return response()->json([
+                'success' => true,
+                'data' => $mediaImage,
+                'message' => 'Imagen de medio actualizada correctamente'
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar la imagen de medio',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(MediaImage $mediaImage)
+    public function destroy(MediaImage $mediaImage): JsonResponse
     {
-        //
+        try {
+            $mediaImage->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Imagen de medio eliminada correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar la imagen de medio',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, MediaImage $mediaImage)
+    public function getByMedia(Media $media): JsonResponse
     {
-        //
-    }
+        try {
+            $images = $media->images()->paginate(15);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(MediaImage $mediaImage)
-    {
-        //
+            return response()->json([
+                'success' => true,
+                'data' => $images,
+                'message' => 'Imágenes de medios obtenidas correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener las imágenes de medios',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

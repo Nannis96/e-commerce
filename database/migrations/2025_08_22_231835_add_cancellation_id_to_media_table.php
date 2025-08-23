@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_cancellations', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-            $table->softDeletes();
-            $table->foreignId('user_id')->constrained();
-            $table->foreignId('cancellation_id')->constrained();
+        Schema::table('media', function (Blueprint $table) {
+            $table->foreignId('cancellation_id')->nullable()->after('user_id')->constrained()->onDelete('set null');
         });
     }
 
@@ -25,6 +21,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('provider_cancellations');
+        Schema::table('media', function (Blueprint $table) {
+            $table->dropForeign(['cancellation_id']);
+            $table->dropColumn('cancellation_id');
+        });
     }
 };
