@@ -172,11 +172,6 @@ Este comando iniciará:
 - 📝 Monitor de logs
 - ⚡ Vite para assets front-end
 
-### Compilación para Producción
-```bash
-# Compilar assets
-npm run build
-
 # Optimizar para producción
 php artisan config:cache
 php artisan route:cache
@@ -262,28 +257,6 @@ http://localhost:8000/api/documentation
 php artisan l5-swagger:generate
 ```
 
-## 🧪 Pruebas
-
-### Ejecutar Pruebas
-```bash
-# Todas las pruebas
-composer test
-
-# O directamente con Pest
-./vendor/bin/pest
-
-# Pruebas con cobertura
-./vendor/bin/pest --coverage
-```
-
-### Estructura de Pruebas
-```
-tests/
-├── Feature/          # Pruebas de integración
-├── Unit/            # Pruebas unitarias
-└── TestCase.php     # Caso base para pruebas
-```
-
 ## 🔧 Comandos Útiles
 
 ### Artisan Commands
@@ -303,23 +276,6 @@ php artisan db:seed --class=UserSeeder
 # Refrescar base de datos
 php artisan migrate:fresh --seed
 ```
-
-### Composer Scripts
-```bash
-# Ejecutar entorno de desarrollo completo
-composer run dev
-
-# Ejecutar pruebas con limpieza de caché
-composer run test
-```
-
-## 🤝 Contribución
-
-1. **Fork** el proyecto
-2. Crea tu **feature branch** (`git checkout -b feature/nueva-funcionalidad`)
-3. **Commit** tus cambios (`git commit -am 'Agrega nueva funcionalidad'`)
-4. **Push** a la branch (`git push origin feature/nueva-funcionalidad`)
-5. Abre un **Pull Request**
 
 ### Estándares de Código
 - Seguir **PSR-12** para PHP
