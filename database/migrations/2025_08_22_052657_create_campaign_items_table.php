@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('campaign_items', function (Blueprint $table) {
             $table->id();
             $table->string('range', 100);
-            $table->string('days', 100);
-            $table->float('price_per_days', 8, 2);
             $table->float('subtotal', 8, 2);
             $table->enum('provider_status', ['Accepted', 'Rejected'])->nullable();
+            $table->float('price_per_day', 8, 2);
+            $table->string('description', 255)->nullable();
             $table->timestamps();
             $table->softDeletes();
             $table->foreignId('campaign_id')->constrained();

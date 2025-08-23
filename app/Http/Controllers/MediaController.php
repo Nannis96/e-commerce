@@ -16,7 +16,7 @@ class MediaController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = Media::with(['user', 'images', 'cancellation']);
+            $query = Media::with(['user', 'images']);
 
             // Pagination
             $perPage = $request->get('per_page', 15);
@@ -44,11 +44,10 @@ class MediaController extends Controller
                 'name' => 'required|string|max:100',
                 'type' => 'required|string|max:100',
                 'location' => 'required|string|max:100',
-                'period_limit' => 'required|string|max:100',
-                'price_limit' => 'required|numeric|min:0|max:999999.99',
+                'price_per_day' => 'required|numeric|min:0|max:999999.99',
                 'status' => 'nullable|in:Available,Busy',
+                'active' => 'nullable|boolean',
                 'user_id' => 'nullable|exists:users,id',
-                'cancellation_id' => 'nullable|exists:cancellations,id',
             ]);
 
             if (!isset($validatedData['user_id'])) {
@@ -56,7 +55,7 @@ class MediaController extends Controller
             }
 
             $media = Media::create($validatedData);
-            $media->load(['user', 'images', 'cancellation']);
+            $media->load(['user', 'images']);
 
             return response()->json([
                 'success' => true,
@@ -77,7 +76,7 @@ class MediaController extends Controller
     public function show(Media $media): JsonResponse
     {
         try {
-            $media->load(['user', 'images', 'cancellation']);
+            $media->load(['user', 'images']);
 
             return response()->json([
                 'success' => true,
@@ -101,15 +100,14 @@ class MediaController extends Controller
                 'name' => 'sometimes|required|string|max:100',
                 'type' => 'sometimes|required|string|max:100',
                 'location' => 'sometimes|required|string|max:100',
-                'period_limit' => 'sometimes|required|string|max:100',
-                'price_limit' => 'sometimes|required|numeric|min:0|max:999999.99',
+                'price_per_day' => 'sometimes|required|numeric|min:0|max:999999.99',
                 'status' => 'sometimes|nullable|in:Available,Busy',
+                'active' => 'sometimes|nullable|boolean',
                 'user_id' => 'sometimes|nullable|exists:users,id',
-                'cancellation_id' => 'sometimes|nullable|exists:cancellations,id',
             ]);
 
             $media->update($validatedData);
-            $media->load(['user', 'images', 'cancellation']);
+            $media->load(['user', 'images']);
 
             return response()->json([
                 'success' => true,
@@ -152,9 +150,6 @@ class MediaController extends Controller
         }
     }
 
-    /**
-     * Get all price rules for a specific media
-     */
     public function getPriceRules(Media $media): JsonResponse
     {
         try {
@@ -175,9 +170,6 @@ class MediaController extends Controller
         }
     }
 
-    /**
-     * Get active price rules for a specific media
-     */
     public function getActivePriceRules(Media $media): JsonResponse
     {
         try {
@@ -198,9 +190,6 @@ class MediaController extends Controller
         }
     }
 
-    /**
-     * Attach price rules to media
-     */
     public function attachPriceRules(Request $request, Media $media): JsonResponse
     {
         try {
@@ -236,9 +225,6 @@ class MediaController extends Controller
         }
     }
 
-    /**
-     * Detach price rules from media
-     */
     public function detachPriceRules(Request $request, Media $media): JsonResponse
     {
         try {
@@ -271,9 +257,6 @@ class MediaController extends Controller
         }
     }
 
-    /**
-     * Sync price rules with media (replace all)
-     */
     public function syncPriceRules(Request $request, Media $media): JsonResponse
     {
         try {
@@ -282,7 +265,6 @@ class MediaController extends Controller
                 'price_rule_ids.*' => 'exists:price_rules,id'
             ]);
 
-            // Sync price rules (this will replace all existing relationships)
             $priceRuleIds = $validatedData['price_rule_ids'] ?? [];
             $media->priceRules()->sync($priceRuleIds);
 
@@ -294,13 +276,6 @@ class MediaController extends Controller
                 'message' => 'Reglas de precios sincronizadas correctamente con el medio'
             ], 200);
 
-        } catch (ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error de validación',
-                'errors' => $e->errors()
-            ], 422);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -310,47 +285,100 @@ class MediaController extends Controller
         }
     }
 
-    /**
-     * Calculate price for media with active price rules
-     */
-    public function calculatePrice(Media $media): JsonResponse
+    public function catalog(Request $request): JsonResponse
     {
         try {
-            $basePrice = $media->price_limit;
-            $activePriceRules = $media->activePriceRules()->get();
-            
-            $finalPrice = $basePrice;
-            $appliedRules = [];
+            $query = Media::with(['user', 'images'])
+                ->where('active', true);
 
-            foreach ($activePriceRules as $rule) {
-                $discount = ($basePrice * $rule->value_pct) / 100;
-                $finalPrice -= $discount;
-                
-                $appliedRules[] = [
-                    'rule_name' => $rule->name,
-                    'discount_percentage' => $rule->value_pct,
-                    'discount_amount' => $discount
-                ];
+            // Apply filters if provided
+            if ($request->has('name') && $request->filled('name')) {
+                $query->where('name', 'like', '%' . $request->get('name') . '%');
             }
+
+            if ($request->has('type') && $request->filled('type')) {
+                $query->where('type', 'like', '%' . $request->get('type') . '%');
+            }
+
+            if ($request->has('location') && $request->filled('location')) {
+                $query->where('location', 'like', '%' . $request->get('location') . '%');
+            }
+
+            if ($request->has('price_per_day') && $request->filled('price_per_day')) {
+                $query->where('price_per_day', '<=', $request->get('price_per_day'));
+            }
+
+            if ($request->has('min_price') && $request->filled('min_price')) {
+                $query->where('price_per_day', '>=', $request->get('min_price'));
+            }
+
+            if ($request->has('max_price') && $request->filled('max_price')) {
+                $query->where('price_per_day', '<=', $request->get('max_price'));
+            }
+
+            // Filter by date availability
+            if ($request->has('start_date') && $request->has('end_date') && 
+                $request->filled('start_date') && $request->filled('end_date')) {
+                
+                $startDate = $request->get('start_date');
+                $endDate = $request->get('end_date');
+                
+                // Validate date format and logic
+                try {
+                    $startDateObj = \Carbon\Carbon::parse($startDate);
+                    $endDateObj = \Carbon\Carbon::parse($endDate);
+                    
+                    if ($endDateObj->lt($startDateObj)) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'La fecha de fin debe ser posterior a la fecha de inicio'
+                        ], 422);
+                    }
+                    
+                    // Exclude media that are already booked in the specified date range
+                    $query->whereDoesntHave('campaignItems', function($q) use ($startDate, $endDate) {
+                        $q->whereHas('campaign', function($campaignQuery) use ($startDate, $endDate) {
+                            $campaignQuery->where(function($dateQuery) use ($startDate, $endDate) {
+                                // Check for date overlap: campaign dates overlap with requested dates
+                                $dateQuery->where('start_date', '<=', $endDate)
+                                    ->where('end_date', '>=', $startDate);
+                            });
+                        });
+                    });
+                    
+                } catch (\Exception $e) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Formato de fecha inválido. Use el formato YYYY-MM-DD'
+                    ], 422);
+                }
+            }
+
+            // Sorting
+            $sortBy = $request->get('sort_by', 'created_at');
+            $sortOrder = $request->get('sort_order', 'desc');
+            
+            $allowedSortFields = ['name', 'type', 'location', 'price_per_day', 'created_at'];
+            if (in_array($sortBy, $allowedSortFields)) {
+                $query->orderBy($sortBy, $sortOrder);
+            } else {
+                $query->orderBy('created_at', 'desc');
+            }
+
+            // Pagination
+            $perPage = $request->get('per_page', 15);
+            $medias = $query->paginate($perPage);
 
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'media_id' => $media->id,
-                    'media_name' => $media->name,
-                    'base_price' => $basePrice,
-                    'final_price' => max(0, $finalPrice), // No negative prices
-                    'total_discount' => $basePrice - max(0, $finalPrice),
-                    'applied_rules' => $appliedRules,
-                    'active_rules_count' => count($appliedRules)
-                ],
-                'message' => 'Precio calculado correctamente'
+                'data' => $medias,
+                'message' => 'Catálogo de medios obtenido correctamente'
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al calcular el precio del medio',
+                'message' => 'Error al obtener el catálogo de medios',
                 'error' => $e->getMessage()
             ], 500);
         }

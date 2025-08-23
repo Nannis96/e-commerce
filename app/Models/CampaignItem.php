@@ -21,6 +21,7 @@ class CampaignItem extends Model
         'price_per_days',
         'subtotal',
         'provider_status',
+        'description',
         'campaign_id',
         'media_id'
     ];

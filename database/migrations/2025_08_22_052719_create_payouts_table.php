@@ -18,7 +18,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
             $table->foreignId('campaign_id')->constrained();
-            $table->foreignId('provider_id')->constrained();
+            $table->foreignId('user_id')->constrained();
         });
     }
 

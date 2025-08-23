@@ -11,13 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cancellations', function (Blueprint $table) {
-            $table->id();
-            $table->integer('start_days');
-            $table->integer('end_days');
-            $table->integer('commission');
-            $table->timestamps();
-            $table->softDeletes();
+        Schema::table('campaigns', function (Blueprint $table) {
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
         });
     }
 
@@ -26,6 +21,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('cancellations');
+        Schema::table('campaigns', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+            $table->dropColumn('user_id');
+        });
     }
 };

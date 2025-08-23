@@ -16,15 +16,15 @@ class Media extends Model
         'name',
         'type',
         'location',
-        'period_limit',
-        'price_limit',
+        'price_per_day',
         'status',
+        'active',
         'user_id',
-        'cancellation_id',
     ];
 
     protected $casts = [
-        'price_limit' => 'decimal:2',
+        'price_per_day' => 'decimal:2',
+        'active' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -67,9 +67,6 @@ class Media extends Model
                     ->withPivot('id', 'deleted_at');
     }
 
-    /**
-     * Get active price rules for the media.
-     */
     public function activePriceRules(): BelongsToMany
     {
         return $this->priceRules()
@@ -77,17 +74,6 @@ class Media extends Model
                     ->where('end_date', '>=', now());
     }
 
-    /**
-     * Get the cancellation policy for the media.
-     */
-    public function cancellation(): BelongsTo
-    {
-        return $this->belongsTo(Cancellation::class);
-    }
-
-    /**
-     * Get all campaign items for the media.
-     */
     public function campaignItems(): HasMany
     {
         return $this->hasMany(CampaignItem::class);

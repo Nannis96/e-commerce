@@ -16,8 +16,9 @@ return new class extends Migration
             $table->string('name', 100);
             $table->date('start_date');  
             $table->date('end_date');  
-            $table->float('total', 8, 2);
+            $table->float('total', 8, 2)->default(0)->nullable();
             $table->string('currency', 100);
+            $table->enum('status', ['Confirmed', 'Paid', 'Active', 'Finished', 'Pending', 'Cancelled'])->default('Pending');
             $table->timestamps();
             $table->softDeletes();
         });

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Campaign extends Model
@@ -20,7 +21,9 @@ class Campaign extends Model
         'start_date',
         'end_date',
         'total',
-        'currency'
+        'currency',
+        'status',
+        'user_id'
     ];
 
     /**
@@ -40,5 +43,13 @@ class Campaign extends Model
     public function campaignItems(): HasMany
     {
         return $this->hasMany(CampaignItem::class);
+    }
+
+    /**
+     * Get the user that owns the campaign.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

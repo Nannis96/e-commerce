@@ -3,9 +3,10 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\CampaignItemController;
-use App\Http\Controllers\CancellationController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MediaImageController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PayoutController;
 use App\Http\Controllers\PriceRuleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -15,6 +16,11 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+});
+
+// Public catalog routes for clients
+Route::prefix('v1/catalog')->group(function () {
+    Route::get('/media', [MediaController::class, 'catalog']);
 });
 
 // Protected auth routes
@@ -47,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{campaign}', [CampaignController::class, 'show']);
         Route::patch('/{campaign}', [CampaignController::class, 'update']);
         Route::delete('/{campaign}', [CampaignController::class, 'destroy']);
+        Route::patch('/{campaign}/cancel', [CampaignController::class, 'cancel']);
     });
 
     // Campaign Items routes - accessible to all authenticated users
@@ -56,6 +63,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{campaign_item}', [CampaignItemController::class, 'show']);
         Route::patch('/{campaign_item}', [CampaignItemController::class, 'update']);
         Route::delete('/{campaign_item}', [CampaignItemController::class, 'destroy']);
+    });
+
+    // Payment routes - accessible to clients and admins
+    Route::prefix('payments')->group(function () {
+        Route::get('/', [PaymentController::class, 'index']);
+        Route::post('/', [PaymentController::class, 'store']);
+        Route::get('/{payment}', [PaymentController::class, 'show']);
+    });
+
+    // Payout routes - accessible to providers and admins
+    Route::prefix('payouts')->group(function () {
+        Route::get('/', [PayoutController::class, 'index']);
+        Route::post('/', [PayoutController::class, 'store']);
+        Route::get('/{payout}', [PayoutController::class, 'show']);
     });
 
     Route::middleware('admin.or.provider')->prefix('v1')->group(function () {
@@ -97,14 +118,13 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::patch('/{priceRule}', [PriceRuleController::class, 'update']);
             Route::delete('/{priceRule}', [PriceRuleController::class, 'destroy']);
         });
+    });
 
-        // Cancellations routes
-        Route::prefix('cancellations')->group(function () {
-            Route::get('/', [CancellationController::class, 'index']);
-            Route::post('/', [CancellationController::class, 'store']);
-            Route::get('/{cancellation}', [CancellationController::class, 'show']);
-            Route::patch('/{cancellation}', [CancellationController::class, 'update']);
-            Route::delete('/{cancellation}', [CancellationController::class, 'destroy']);
+    // Provider-only routes for campaign items
+    Route::middleware('provider')->prefix('v1')->group(function () {
+        Route::prefix('campaign-items')->group(function () {
+            Route::patch('/{campaign_item}/accept', [CampaignItemController::class, 'accept']);
+            Route::patch('/{campaign_item}/reject', [CampaignItemController::class, 'reject']);
         });
     });
 });
